@@ -1,10 +1,17 @@
-/*! PhotoSwipe Default UI - 4.1.0 - 2015-09-04
+/*! PhotoSwipe Default UI - 4.1.0 - 2015-10-20
 * http://photoswipe.com
 * Copyright (c) 2015 Dmitry Semenov; */
 /**
 *
 * UI on top of main sliding area (caption, arrows, close button, etc.).
 * Built just using public methods/properties of PhotoSwipe.
+* This fork replaces framework event binding with jQuery Mobile touch events,
+* where available, which allows UI to function properly on iOS4 and Android 2.1 - 2.3.5.
+* If jQuery Mobile touch library is not detected, script falls back to PhotoSwipe framework methods.
+* 
+* jQuery Mobile must be loaded in order for new functionality to kick in.  If using a custom
+* build, ensure that the "Touch" library is included.
+* 
 * 
 */
 (function (root, factory) { 
@@ -583,12 +590,23 @@ var PhotoSwipeUI_Default =
 
 		// bind events for UI
 		_listen('bindEvents', function() {
-			framework.bind(_controls, 'pswpTap click', _onControlsTap);
-			framework.bind(pswp.scrollWrap, 'pswpTap', ui.onGlobalTap);
-
-			if(!pswp.likelyTouchDevice) {
-				framework.bind(pswp.scrollWrap, 'mouseover', ui.onMouseOver);
+			// If jQuery Mobile touch library exists, use it. 
+			if (typeof window.jQuery.mobile.support.touch !== "undefined") {
+				$(_controls).on('tap click', _onControlsTap);
+				$(pswp.scrollWrap).on('tap', ui.onGlobalTap);
+				if(!pswp.likelyTouchDevice) {
+					$(pswp.scrollWrap).on('mouseover', ui.onMouseOver);
+				};
 			}
+			// Otherwise, use the standard PhotoSwipe methods
+			else
+			{
+				framework.bind(_controls, 'pswpTap click', _onControlsTap);
+				framework.bind(pswp.scrollWrap, 'pswpTap', ui.onGlobalTap);
+				if(!pswp.likelyTouchDevice) {
+					framework.bind(pswp.scrollWrap, 'mouseover', ui.onMouseOver);
+				};
+			};
 		});
 
 		// unbind events for UI
@@ -605,6 +623,13 @@ var PhotoSwipeUI_Default =
 			framework.unbind(_controls, 'pswpTap click', _onControlsTap);
 			framework.unbind(pswp.scrollWrap, 'pswpTap', ui.onGlobalTap);
 			framework.unbind(pswp.scrollWrap, 'mouseover', ui.onMouseOver);
+			
+			if (typeof window.jQuery.mobile.support.touch !== "undefined") {
+				$(_controls).off('tap click', _onControlsTap);
+				$(pswp.scrollWrap).off('tap', ui.onGlobalTap);
+				$(pswp.scrollWrap).off('mouseover', ui.onMouseOver);
+				
+			};
 
 			if(_fullscrenAPI) {
 				framework.unbind(document, _fullscrenAPI.eventK, ui.updateFullscreen);
